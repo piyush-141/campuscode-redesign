@@ -137,16 +137,46 @@ const productDemos = [
 ];
 
 function ProductDemosSection() {
-  const pairs = [productDemos.slice(0, 2), productDemos.slice(2, 4)];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const triggerRefs = useRef([]);
+  const reduceMotion = useReducedMotion();
+  const activeDemo = productDemos[activeIndex];
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      const visibleStep = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visibleStep) setActiveIndex(Number(visibleStep.target.dataset.demoIndex));
+    }, { rootMargin: '-36% 0px -36% 0px', threshold: [0, 0.1, 0.3, 0.6] });
+
+    triggerRefs.current.forEach((trigger) => trigger && observer.observe(trigger));
+    return () => observer.disconnect();
+  }, []);
+
+  const transition = reduceMotion
+    ? { initial: false, animate: { opacity: 1, y: 0, filter: 'blur(0px)' }, transition: { duration: 0 } }
+    : { initial: { opacity: 0.45, y: 9, filter: 'blur(5px)' }, animate: { opacity: 1, y: 0, filter: 'blur(0px)' }, transition: { duration: 0.48, ease: [0.22, 1, 0.36, 1] } };
+
   return <section className={'product-section section-wrap'} id={'product-demos'}>
     <div className={'section-heading centered reveal'}><p className={'eyebrow'}>A CLOSER LOOK</p><h2>See the work take shape.</h2><p>From the first search to the final recognition, each step has a clear place.</p></div>
-    <div className={'demo-pair-stack'}>
-      {pairs.map((pair, pairIndex) => <div className={'demo-pair'} key={pairIndex}>
-        {pair.map(({ step, title, detail, screenTitle, image, kind }, index) => <article className={`demo-feature-row demo-${kind} reveal${index ? ' reveal-delay-1' : ''}`} key={step}>
-          <div className={'demo-caption'}><span>{step}</span><h3>{title}</h3><p>{detail}</p></div>
-          <ScreenshotSlot className={'demo-screen'} title={screenTitle} src={image} />
-        </article>)}
-      </div>)}
+    <div className={'demo-story'}>
+      <div className={'demo-story-frame'}>
+        <motion.div key={`copy-${activeDemo.step}`} className={'demo-story-copy'} aria-live={'polite'} {...transition}>
+          <span className={'demo-story-eyebrow'}>{activeDemo.step}</span>
+          <h3>{activeDemo.title}</h3>
+          <p>{activeDemo.detail}</p>
+          <div className={'demo-story-progress'} aria-label={`View ${activeIndex + 1} of ${productDemos.length}`}>
+            {productDemos.map((demo, index) => <span className={index === activeIndex ? 'is-active' : ''} key={demo.step} />)}
+          </div>
+        </motion.div>
+        <motion.div key={`screen-${activeDemo.step}`} className={'demo-story-screen'} {...transition}>
+          <ScreenshotSlot className={'demo-screen'} title={activeDemo.screenTitle} src={activeDemo.image} />
+        </motion.div>
+      </div>
+      <div className={'demo-story-triggers'} aria-hidden={'true'}>
+        {productDemos.map((demo, index) => <div className={'demo-story-trigger'} data-demo-index={index} ref={(node) => { triggerRefs.current[index] = node; }} key={demo.step} />)}
+      </div>
     </div>
   </section>;
 }
