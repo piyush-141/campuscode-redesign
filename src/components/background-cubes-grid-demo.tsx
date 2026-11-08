@@ -119,10 +119,6 @@ export default function BackgroundCubesGridDemo() {
             See How It Works
           </a>
         </motion.div>
-        <div className="hero-preview-switch" role="group" aria-label="Product preview" id="hero-preview">
-          <button type="button" aria-controls="hero-preview-panel" aria-pressed={previewMode === "dashboard"} className={previewMode === "dashboard" ? "is-active" : ""} onClick={() => setPreviewMode("dashboard")}>Dashboard</button>
-          <button type="button" aria-controls="hero-preview-panel" aria-pressed={previewMode === "how"} className={previewMode === "how" ? "is-active" : ""} onClick={() => setPreviewMode("how")}>How it works</button>
-        </div>
         <div className="hero-dashboard-preview" id="hero-preview-panel" role="region" aria-label={previewMode === "how" ? "CampusCode product walkthrough video" : "CampusCode student dashboard preview"}>
           <div className="dashboard-preview-body">
             {previewMode === "how" ? (
@@ -139,6 +135,10 @@ export default function BackgroundCubesGridDemo() {
               <img className="dashboard-preview-media" src={overviewScreen} alt="CampusCode dashboard with student activity, deadlines, communications and personalised events." loading="eager" />
             )}
           </div>
+        </div>
+        <div className="hero-preview-switch" role="group" aria-label="Product preview" id="hero-preview">
+          <button type="button" aria-controls="hero-preview-panel" aria-pressed={previewMode === "dashboard"} className={previewMode === "dashboard" ? "is-active" : ""} onClick={() => setPreviewMode("dashboard")}>Dashboard</button>
+          <button type="button" aria-controls="hero-preview-panel" aria-pressed={previewMode === "how"} className={previewMode === "how" ? "is-active" : ""} onClick={() => setPreviewMode("how")}>How it works</button>
         </div>
       </div>
     </section>
