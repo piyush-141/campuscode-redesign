@@ -1,11 +1,12 @@
 "use client";
 
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ClipboardList, CloudUpload, Code2, Sparkles, UsersRound, type LucideIcon } from "lucide-react";
+import { ClipboardList, CloudUpload, Code2, Sparkles, UsersRound, Volume2, VolumeX, type LucideIcon } from "lucide-react";
 import { MagneticButton } from "./ui/magnetic-button";
 import { cn } from "../lib/utils";
 import overviewScreen from "../../final-ui/overview.png";
+import campuscodeVideo from "../assets/what-is-campuscode.mp4";
 
 const IsometricCubes = lazy(() =>
   import("./ui/background-cubes-grid").then(({ IsometricCubes }) => ({ default: IsometricCubes })),
@@ -44,11 +45,25 @@ function FeaturePill({
 
 export default function BackgroundCubesGridDemo() {
   const reduceMotion = useReducedMotion();
+  const [previewMode, setPreviewMode] = useState<"how" | "dashboard">("how");
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const fadeUp = (delay: number) => ({
     initial: reduceMotion ? false : { opacity: 0, y: 12, filter: "blur(7px)" },
     animate: { opacity: 1, y: 0, filter: "blur(0px)" },
     transition: { duration: reduceMotion ? 0 : 0.7, ease: EASE_OUT, delay },
   });
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = isMuted;
+    if (previewMode === "how") {
+      void video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [isMuted, previewMode]);
 
   return (
     <section
@@ -97,19 +112,33 @@ export default function BackgroundCubesGridDemo() {
             </a>
           </MagneticButton>
           <a
-            href="#students"
+            href="#hero-preview"
             className="button button-outline"
+            onClick={() => setPreviewMode("how")}
           >
             See How It Works
           </a>
         </motion.div>
-        <div className="hero-dashboard-preview" aria-label="CampusCode student dashboard preview">
-          <div className="dashboard-preview-bar">
-            <span className="dashboard-dots"><i></i><i></i><i></i></span>
-            <span>CAMPUSCODE / STUDENT WORKSPACE</span>
-            <span className="dashboard-preview-callout">PRODUCT PREVIEW</span>
+        <div className="hero-preview-switch" role="group" aria-label="Product preview" id="hero-preview">
+          <button type="button" aria-controls="hero-preview-panel" aria-pressed={previewMode === "dashboard"} className={previewMode === "dashboard" ? "is-active" : ""} onClick={() => setPreviewMode("dashboard")}>Dashboard</button>
+          <button type="button" aria-controls="hero-preview-panel" aria-pressed={previewMode === "how"} className={previewMode === "how" ? "is-active" : ""} onClick={() => setPreviewMode("how")}>How it works</button>
+        </div>
+        <div className="hero-dashboard-preview" id="hero-preview-panel" role="region" aria-label={previewMode === "how" ? "CampusCode product walkthrough video" : "CampusCode student dashboard preview"}>
+          <div className="dashboard-preview-body">
+            {previewMode === "how" ? (
+              <>
+                <video ref={videoRef} className="dashboard-preview-media" autoPlay muted={isMuted} loop playsInline preload="metadata" aria-label="CampusCode walkthrough">
+                  <source src={campuscodeVideo} type="video/mp4" />
+                </video>
+                <button type="button" className="preview-sound-toggle" onClick={() => setIsMuted((muted) => !muted)} aria-label={isMuted ? "Turn video sound on" : "Turn video sound off"}>
+                  {isMuted ? <VolumeX size={15} aria-hidden="true" /> : <Volume2 size={15} aria-hidden="true" />}
+                  <span>{isMuted ? "Sound off" : "Sound on"}</span>
+                </button>
+              </>
+            ) : (
+              <img className="dashboard-preview-media" src={overviewScreen} alt="CampusCode dashboard with student activity, deadlines, communications and personalised events." loading="eager" />
+            )}
           </div>
-          <div className="dashboard-preview-body"><img className="dashboard-preview-shot" src={overviewScreen} alt="CampusCode dashboard with student activity, deadlines, communications and personalised events." loading="eager" /></div>
         </div>
       </div>
     </section>

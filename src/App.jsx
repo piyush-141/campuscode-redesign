@@ -139,28 +139,45 @@ const productDemos = [
 function ProductDemosSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const triggerRefs = useRef([]);
+  const storyRef = useRef(null);
   const reduceMotion = useReducedMotion();
   const activeDemo = productDemos[activeIndex];
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      const visibleStep = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (visibleStep) setActiveIndex(Number(visibleStep.target.dataset.demoIndex));
-    }, { rootMargin: '-36% 0px -36% 0px', threshold: [0, 0.1, 0.3, 0.6] });
+    let frame = 0;
+    const updateActiveStep = () => {
+      frame = 0;
+      const markerLine = window.innerHeight * 0.52;
+      const nextIndex = triggerRefs.current.findIndex((trigger) => {
+        if (!trigger) return false;
+        const bounds = trigger.getBoundingClientRect();
+        return bounds.top <= markerLine && bounds.bottom > markerLine;
+      });
+      if (nextIndex >= 0) setActiveIndex((current) => current === nextIndex ? current : nextIndex);
+      else if (storyRef.current && storyRef.current.getBoundingClientRect().top > markerLine) setActiveIndex(0);
+      else if (storyRef.current) setActiveIndex(productDemos.length - 1);
+    };
+    const scheduleUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateActiveStep);
+    };
 
-    triggerRefs.current.forEach((trigger) => trigger && observer.observe(trigger));
-    return () => observer.disconnect();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    scheduleUpdate();
+    return () => {
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   const transition = reduceMotion
     ? { initial: false, animate: { opacity: 1, y: 0, filter: 'blur(0px)' }, transition: { duration: 0 } }
-    : { initial: { opacity: 0.45, y: 9, filter: 'blur(5px)' }, animate: { opacity: 1, y: 0, filter: 'blur(0px)' }, transition: { duration: 0.48, ease: [0.22, 1, 0.36, 1] } };
+    : { initial: { opacity: 0.72, y: 4 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] } };
 
   return <section className={'product-section section-wrap'} id={'product-demos'}>
     <div className={'section-heading centered reveal'}><p className={'eyebrow'}>A CLOSER LOOK</p><h2>See the work take shape.</h2><p>From the first search to the final recognition, each step has a clear place.</p></div>
-    <div className={'demo-story'}>
+    <div className={'demo-story'} ref={storyRef}>
       <div className={'demo-story-frame'}>
         <motion.div key={`copy-${activeDemo.step}`} className={'demo-story-copy'} aria-live={'polite'} {...transition}>
           <span className={'demo-story-eyebrow'}>{activeDemo.step}</span>
@@ -175,7 +192,7 @@ function ProductDemosSection() {
         </motion.div>
       </div>
       <div className={'demo-story-triggers'} aria-hidden={'true'}>
-        {productDemos.map((demo, index) => <div className={'demo-story-trigger'} data-demo-index={index} ref={(node) => { triggerRefs.current[index] = node; }} key={demo.step} />)}
+        {productDemos.map((demo, index) => <div className={'demo-story-trigger'} ref={(node) => { triggerRefs.current[index] = node; }} key={demo.step} />)}
       </div>
     </div>
   </section>;
@@ -220,7 +237,7 @@ export default function App() {
       <motion.div {...entranceMotion(reduceMotion, 3)}><ToolkitSection /></motion.div>
       <motion.div {...entranceMotion(reduceMotion, 4)}><FeaturedEventsSection /></motion.div>
       <motion.div {...entranceMotion(reduceMotion, 5)}><AudienceSection /></motion.div>
-      <motion.div {...entranceMotion(reduceMotion, 6)}><ProductDemosSection /></motion.div>
+      <ProductDemosSection />
       <motion.div {...entranceMotion(reduceMotion, 7)}><FaqSection /></motion.div>
       <motion.div {...entranceMotion(reduceMotion, 8)}><FinalCtaSection /></motion.div>
     </motion.main>
